@@ -144,29 +144,42 @@
         let msCtx = maskCanvas.getContext('2d');
         let isEditing = false, currentTool = 'draw', isProcessed = false;
         let currentStickerType = null; 
+
+        // 修正 B: 模型状态追踪
+        let isModelLoaded = false;
+        let bpNet = null;
+
         const stickerAssets = { stars: new Image(), y2k: new Image() };
-        stickerAssets.stars.src = 'ArtStudio-VibePrinting/Star Sticker Template.png';
-        stickerAssets.y2k.src = 'ArtStudio-VibePrinting/Y2K Sticker Template.png';
+        stickerAssets.stars.src = 'Artstudio/Star Sticker Template.png';
+        stickerAssets.y2k.src = 'Artstudio/Y2K Sticker Template.png';
+
         document.getElementById('fInput').onchange = (e) => {
             const file = e.target.files[0];
             const reader = new FileReader();
             reader.onload = (ev) => {
                 const img = new Image();
-                img.onload = () => { rawImg = img; document.getElementById('cut-tools').style.display = 'block'; };
+                // 修正 A: 开启跨域许可
+                img.crossOrigin = "Anonymous";
+                img.onload = () => { 
+                    rawImg = img; 
+                    document.getElementById('cut-tools').style.display = 'block'; 
+                };
                 img.src = ev.target.result;
             };
             reader.readAsDataURL(file);
         };
+
         async function runAI() {
             try {
-                const net = await bodyPix.load();
-                const seg = await net.segmentPerson(rawImg);
+                if(!bpNet) bpNet = await bodyPix.load();
+                const seg = await bpNet.segmentPerson(rawImg);
                 const mask = bodyPix.toMask(seg, {r:255,g:255,b:255,a:255}, {r:0,g:0,b:0,a:0});
                 initCanvases(rawImg.width, rawImg.height);
                 msCtx.putImageData(mask, 0, 0);
                 finalizeCutout();
             } catch (e) { runManual(); }
         }
+
         function runManual() {
             initCanvases(rawImg.width, rawImg.height);
             document.getElementById('step-layer').style.display = 'none';
@@ -175,10 +188,14 @@
             msCtx.fillStyle = 'black'; msCtx.fillRect(0,0,maskCanvas.width,maskCanvas.height);
             isEditing = true; renderManualLoop(); initDrawEvents();
         }
+
         function initCanvases(w, h) {
+            // 修正 C: 清空残留数据
+            mCtx.clearRect(0,0,mCanvas.width,mCanvas.height);
             mCanvas.width = maskCanvas.width = w;
             mCanvas.height = maskCanvas.height = h;
         }
+
         function renderManualLoop() {
             if(!isEditing) return;
             mCtx.clearRect(0,0,mCanvas.width,mCanvas.height);
@@ -189,6 +206,7 @@
             mCtx.fillRect(0, 0, mCanvas.width, mCanvas.height);
             mCtx.restore(); requestAnimationFrame(renderManualLoop);
         }
+
         function initDrawEvents() {
             let drawing = false;
             mCanvas.onmousedown = () => drawing = true;
@@ -204,11 +222,13 @@
                 msCtx.beginPath(); msCtx.arc(x, y, size/2, 0, Math.PI*2); msCtx.fill();
             };
         }
+
         function setTool(t) {
             currentTool = t;
             document.getElementById('brushBtn').classList.toggle('active', t==='draw');
             document.getElementById('eraserBtn').classList.toggle('active', t==='erase');
         }
+
         function finalizeCutout() {
             isEditing = false;
             document.getElementById('step-layer').style.display = 'none';
@@ -220,6 +240,7 @@
             oCtx.drawImage(maskCanvas, 0, 0); oCtx.globalCompositeOperation = 'source-in'; oCtx.drawImage(rawImg, 0, 0);
             cutoutImg = offC; isProcessed = true; draw();
         }
+
         function draw() {
             if(!cutoutImg || isEditing) return; 
             const dot = parseInt(document.getElementById('dotIn').value);
@@ -252,15 +273,18 @@
                 }
             }
         }
+
         function toggleStickerMenu() {
             if(!isProcessed) { alert("请先上传并完成抠图确认，才能贴纸哦！"); return; }
             const menu = document.getElementById('sticker-menu');
             menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
         }
+
         function applyRealSticker(type) {
             currentStickerType = (currentStickerType === type) ? null : type;
             draw(); document.getElementById('sticker-menu').style.display = 'none';
         }
+
         function randomize() {
             document.getElementById('dotIn').value = Math.floor(Math.random()*9)+1;
             document.getElementById('threshIn').value = Math.floor(Math.random()*9)+1;
@@ -269,11 +293,13 @@
             selectedInk = nc; document.getElementById('inkPrev').style.background = nc;
             document.getElementById('inkColor').value = nc; draw();
         }
+
         function exportArt() {
             const link = document.createElement('a');
             link.download = 'VibePrinting_Art.png';
             link.href = mCanvas.toDataURL(); link.click();
         }
+
         document.querySelectorAll('input').forEach(i => i.oninput = draw);
         document.getElementById('inkColor').onchange = (e) => {
             selectedInk = e.target.value;
@@ -284,6 +310,6 @@
                 document.getElementById('sticker-menu').style.display = 'none';
             }
         };
-    <script type="module" scr="/index.tsx"></script>
+    </script>
 </body>
 </html>
