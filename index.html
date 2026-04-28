@@ -6,7 +6,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0/dist/body-pix.min.js"></script>
     <style>
-        /* 保持你的设计系统不变 */
         :root {
             --bg-color: rgb(251, 242, 245);
             --panel-bg: #FEFDF5;
@@ -16,60 +15,47 @@
             --radius-box: 20px;
             --shadow: 0 10px 30px rgba(111, 78, 55, 0.08);
         }
-
         body {
             background-color: var(--bg-color);
             color: var(--text-brown);
             font-family: -apple-system, "SF Pro SC", "Noto Sans SC", sans-serif;
             margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden;
         }
-
         nav {
             height: 70px; background: var(--panel-bg); display: flex; 
             justify-content: space-between; align-items: center; 
             padding: 0 40px; border-bottom: 2px solid rgba(111, 78, 55, 0.05); z-index: 1000;
         }
         .logo { font-weight: 900; font-size: 1.6rem; letter-spacing: 1px; }
-
         .btn-p {
             background: var(--text-brown); color: white; border: none;
             padding: 12px 28px; border-radius: 50px;
             cursor: pointer; font-weight: bold; transition: 0.3s;
         }
         .btn-p:hover { opacity: 0.9; transform: translateY(-1px); }
-
         main { flex: 1; display: flex; position: relative; }
         .sidebar {
             width: 320px; padding: 25px; background: rgba(254, 253, 245, 0.4);
             display: flex; flex-direction: column; gap: 15px; border-right: 1px solid rgba(111, 78, 55, 0.05);
             overflow-y: auto;
         }
-
         .control-group {
             background: var(--panel-bg); padding: 18px 22px; border-radius: var(--radius-box);
             box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px;
         }
         .control-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
-
         input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; background: transparent; cursor: pointer; }
         input[type="range"]::-webkit-slider-runnable-track { background: #E0E0E0; height: 8px; border-radius: 4px; }
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; height: 22px; width: 22px; border-radius: 50%; background: var(--morandi-green); margin-top: -7px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-
         .color-preview { width: 45px; height: 45px; border-radius: 12px; background: #2B4C9B; border: 3px solid white; box-shadow: var(--shadow); cursor: pointer; }
-
         .tool-btn { flex: 1; padding: 8px; border-radius: 10px; border: 2px solid #EEE; background: white; cursor: pointer; font-weight: bold; color: #999; }
         .tool-btn.active { border-color: var(--morandi-green); color: var(--morandi-green); background: rgba(141, 168, 109, 0.1); }
-
         .workspace { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; position: relative; }
         #canvas-wrap { position: relative; border-radius: var(--radius-box); overflow: hidden; box-shadow: var(--shadow); }
         canvas { max-width: 100%; max-height: 80vh; background: white; }
-
         .overlay { position: absolute; inset: 0; background: var(--bg-color); z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .upload-card { background: var(--panel-bg); padding: 50px; border-radius: 32px; box-shadow: var(--shadow); text-align: center; width: 400px; }
-        
         .disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
-
-        /* 贴纸二级弹出小窗样式 */
         .sticker-container { position: relative; width: 100%; margin-top: auto; }
         #sticker-menu {
             position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%);
@@ -89,7 +75,6 @@
     </style>
 </head>
 <body>
-
     <nav>
         <div class="logo">VibePrinting</div>
         <div style="display:flex; gap:15px;">
@@ -97,7 +82,6 @@
             <button class="btn-p" onclick="exportArt()">导出作品</button>
         </div>
     </nav>
-
     <main>
         <aside id="sidebar" class="sidebar disabled">
             <div class="control-group">
@@ -107,7 +91,6 @@
                     <input type="color" id="inkColor" value="#2B4C9B" style="opacity:0; width:0; height:0;">
                 </div>
             </div>
-
             <div id="manual-controls" class="control-group" style="display:none; border: 2px solid var(--morandi-blue);">
                 <div class="control-header"><label>涂抹工具</label></div>
                 <div style="display:flex; gap:10px;">
@@ -117,21 +100,17 @@
                 <input type="range" id="brushSize" min="5" max="100" value="40">
                 <button class="btn-p" onclick="finalizeCutout()">完成抠图确认</button>
             </div>
-
             <div class="control-group">
                 <div class="control-header"><label>网点大小</label><span id="dotVal">7</span></div>
                 <input type="range" id="dotIn" min="1" max="10" value="7">
             </div>
-
             <div class="control-group">
                 <div class="control-header"><label>对比度</label><span id="threshVal">5</span></div>
                 <input type="range" id="threshIn" min="1" max="10" value="5">
             </div>
-
             <div class="control-group" style="cursor:pointer; text-align:center; background: var(--morandi-blue); color:white;" onclick="randomize()">
                 <div style="font-weight:900;">🎲 随机一下参数</div>
             </div>
-
             <div class="sticker-container">
                 <div id="sticker-menu">
                     <button class="sticker-opt" onclick="applyRealSticker('stars')">星星</button>
@@ -140,7 +119,6 @@
                 <button class="btn-p" id="sticker-main-btn" style="width:100%; background: var(--morandi-green);" onclick="toggleStickerMenu()">🌟 贴纸一下</button>
             </div>
         </aside>
-
         <div class="workspace">
             <div id="step-layer" class="overlay">
                 <div class="upload-card">
@@ -158,27 +136,17 @@
             <div id="canvas-wrap"><canvas id="mCanvas"></canvas></div>
         </div>
     </main>
-
     <script>
         const mCanvas = document.getElementById('mCanvas');
         const mCtx = mCanvas.getContext('2d');
         let rawImg = null, cutoutImg = null, selectedInk = "#2B4C9B";
         let maskCanvas = document.createElement('canvas');
         let msCtx = maskCanvas.getContext('2d');
-        let isEditing = false, currentTool = 'draw';
-        let isProcessed = false;
-
-        // 存储当前选中的贴纸类型
+        let isEditing = false, currentTool = 'draw', isProcessed = false;
         let currentStickerType = null; 
-
-        // 预加载贴纸模版
-        const stickerAssets = {
-            stars: new Image(),
-            y2k: new Image()
-        };
+        const stickerAssets = { stars: new Image(), y2k: new Image() };
         stickerAssets.stars.src = 'Star Sticker Template.png';
         stickerAssets.y2k.src = 'Y2K Sticker Template.png';
-
         document.getElementById('fInput').onchange = (e) => {
             const file = e.target.files[0];
             const reader = new FileReader();
@@ -189,7 +157,6 @@
             };
             reader.readAsDataURL(file);
         };
-
         async function runAI() {
             try {
                 const net = await bodyPix.load();
@@ -200,23 +167,18 @@
                 finalizeCutout();
             } catch (e) { runManual(); }
         }
-
         function runManual() {
             initCanvases(rawImg.width, rawImg.height);
             document.getElementById('step-layer').style.display = 'none';
             document.getElementById('sidebar').classList.remove('disabled');
             document.getElementById('manual-controls').style.display = 'flex';
             msCtx.fillStyle = 'black'; msCtx.fillRect(0,0,maskCanvas.width,maskCanvas.height);
-            isEditing = true;
-            renderManualLoop();
-            initDrawEvents();
+            isEditing = true; renderManualLoop(); initDrawEvents();
         }
-
         function initCanvases(w, h) {
             mCanvas.width = maskCanvas.width = w;
             mCanvas.height = maskCanvas.height = h;
         }
-
         function renderManualLoop() {
             if(!isEditing) return;
             mCtx.clearRect(0,0,mCanvas.width,mCanvas.height);
@@ -225,10 +187,8 @@
             mCtx.globalCompositeOperation = 'source-atop';
             mCtx.fillStyle = "rgba(163, 185, 201, 0.8)";
             mCtx.fillRect(0, 0, mCanvas.width, mCanvas.height);
-            mCtx.restore();
-            requestAnimationFrame(renderManualLoop);
+            mCtx.restore(); requestAnimationFrame(renderManualLoop);
         }
-
         function initDrawEvents() {
             let drawing = false;
             mCanvas.onmousedown = () => drawing = true;
@@ -244,13 +204,11 @@
                 msCtx.beginPath(); msCtx.arc(x, y, size/2, 0, Math.PI*2); msCtx.fill();
             };
         }
-
         function setTool(t) {
             currentTool = t;
             document.getElementById('brushBtn').classList.toggle('active', t==='draw');
             document.getElementById('eraserBtn').classList.toggle('active', t==='erase');
         }
-
         function finalizeCutout() {
             isEditing = false;
             document.getElementById('step-layer').style.display = 'none';
@@ -259,15 +217,9 @@
             const offC = document.createElement('canvas');
             offC.width = mCanvas.width; offC.height = mCanvas.height;
             const oCtx = offC.getContext('2d');
-            oCtx.drawImage(maskCanvas, 0, 0);
-            oCtx.globalCompositeOperation = 'source-in';
-            oCtx.drawImage(rawImg, 0, 0);
-            cutoutImg = offC;
-            isProcessed = true;
-            draw();
+            oCtx.drawImage(maskCanvas, 0, 0); oCtx.globalCompositeOperation = 'source-in'; oCtx.drawImage(rawImg, 0, 0);
+            cutoutImg = offC; isProcessed = true; draw();
         }
-
-        // --- 修正 1 & 2：整合贴纸渲染到主 draw 函数中，实现全屏独占 ---
         function draw() {
             if(!cutoutImg || isEditing) return; 
             const dot = parseInt(document.getElementById('dotIn').value);
@@ -275,17 +227,12 @@
             const thr = (11 - contrast) * 25.5;
             document.getElementById('dotVal').innerText = dot;
             document.getElementById('threshVal').innerText = contrast;
-
             const tC = document.createElement('canvas');
             tC.width = mCanvas.width; tC.height = mCanvas.height;
             const tCtx = tC.getContext('2d');
             tCtx.drawImage(cutoutImg, 0, 0);
             const data = tCtx.getImageData(0,0,mCanvas.width,mCanvas.height);
-            
-            // 每次重绘，先清空画布
             mCtx.clearRect(0,0,mCanvas.width,mCanvas.height);
-            
-            // 1. 渲染丝网网点层
             mCtx.fillStyle = selectedInk;
             for(let y=0; y<mCanvas.height; y+=dot) {
                 for(let x=0; x<mCanvas.width; x+=dot) {
@@ -298,70 +245,39 @@
                     }
                 }
             }
-
-            // 2. 渲染全屏贴纸层 (如果选中)，确保其置顶
             if (currentStickerType) {
                 const sImg = stickerAssets[currentStickerType];
                 if (sImg.complete) {
-                    mCtx.save();
-                    // 核心修改：使用画布宽高，强制全屏铺满
-                    mCtx.drawImage(sImg, 0, 0, mCanvas.width, mCanvas.height);
-                    mCtx.restore();
+                    mCtx.save(); mCtx.drawImage(sImg, 0, 0, mCanvas.width, mCanvas.height); mCtx.restore();
                 }
             }
         }
-
         function toggleStickerMenu() {
-            if(!isProcessed) {
-                alert("请先上传并完成抠图确认，才能贴纸哦！");
-                return;
-            }
+            if(!isProcessed) { alert("请先上传并完成抠图确认，才能贴纸哦！"); return; }
             const menu = document.getElementById('sticker-menu');
             menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
         }
-
-        // --- 修正 1 & 2：应用贴纸逻辑更新 ---
         function applyRealSticker(type) {
-            if (currentStickerType === type) {
-                // 如果点的是同一个，则取消贴纸
-                currentStickerType = null;
-            } else {
-                // 否则，应用新的贴纸类型（自动替换旧的）
-                currentStickerType = type;
-            }
-            
-            // 调用全局 draw 函数重新渲染整个画面
-            draw();
-            document.getElementById('sticker-menu').style.display = 'none';
+            currentStickerType = (currentStickerType === type) ? null : type;
+            draw(); document.getElementById('sticker-menu').style.display = 'none';
         }
-
-        // --- 修正 3：“随机一下”中加入颜色的随机化 ---
         function randomize() {
             document.getElementById('dotIn').value = Math.floor(Math.random()*9)+1;
             document.getElementById('threshIn').value = Math.floor(Math.random()*9)+1;
-            
-            // 随机一个颜色 (HSV模式随机更柔和，这里简单使用莫兰迪色系随机)
-            const morandiColors = ['#2B4C9B', '#6F4E37', '#8DA86D', '#D43F8D', '#E8A1B5', '#8C847D', '#7B9B8E'];
-            const newColor = morandiColors[Math.floor(Math.random()*morandiColors.length)];
-            
-            selectedInk = newColor;
-            document.getElementById('inkPrev').style.background = newColor;
-            document.getElementById('inkColor').value = newColor;
-
-            draw();
+            const mc = ['#2B4C9B', '#6F4E37', '#8DA86D', '#D43F8D', '#E8A1B5', '#8C847D', '#7B9B8E'];
+            const nc = mc[Math.floor(Math.random()*mc.length)];
+            selectedInk = nc; document.getElementById('inkPrev').style.background = nc;
+            document.getElementById('inkColor').value = nc; draw();
         }
-
         function exportArt() {
             const link = document.createElement('a');
             link.download = 'VibePrinting_Art.png';
             link.href = mCanvas.toDataURL(); link.click();
         }
-
         document.querySelectorAll('input').forEach(i => i.oninput = draw);
         document.getElementById('inkColor').onchange = (e) => {
             selectedInk = e.target.value;
-            document.getElementById('inkPrev').style.background = selectedInk;
-            draw();
+            document.getElementById('inkPrev').style.background = selectedInk; draw();
         };
         window.onclick = (e) => {
             if(!e.target.closest('.sticker-container')) {
