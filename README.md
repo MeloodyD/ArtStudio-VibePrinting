@@ -2,7 +2,7 @@
 VibePrinting: 给单调的照片增加一点画报Vibe😎，一个便携的丝网印刷生成器。集智能抠图、复古网点滤镜与 Y2K 贴纸美学于一体的交互式设计工具!
 
 # Introduction
-## 🎨 VibePrinting - Morandi Art Studio
+## 🎨 VibePrinting - Art Studio
 
 VibePrinting 是一款轻量级的、基于浏览器的视觉实验工具。它将现代 **AI 图像分割技术** 与复古的 **丝网印刷（Screentone/Halftone）美学** 相结合，让用户一键创作出具有 Y2K 复古美感的艺术作品。
 
