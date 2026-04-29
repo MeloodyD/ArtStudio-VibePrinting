@@ -55,7 +55,7 @@
         .overlay { position: absolute; inset: 0; background: var(--bg-color); z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .upload-card { background: var(--panel-bg); padding: 50px; border-radius: 32px; box-shadow: var(--shadow); text-align: center; width: 400px; }
         .disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
-        .sticker-container { position: relative; width: 100%; margin-top: auto; }
+        .sticker-container { position: relative; width: 100%; } /* 取消手机端 margin-top: auto */
         #sticker-menu {
             position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%);
             background: white; border-radius: 15px; border: 2px solid var(--text-brown);
@@ -67,23 +67,37 @@
             border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: bold;
         }
 
-        /* --- 极简优化：手机端侧边栏并排补丁 --- */
+        /* --- 修正版：手机端并排布局 + 按钮尺寸微调 --- */
         @media screen and (max-width: 768px) {
             nav { padding: 0 10px; height: 60px; }
             .logo { font-size: 1rem; }
             nav .btn-p { padding: 6px 10px; font-size: 0.75rem; border-radius: 8px; }
             .sidebar { 
-                width: 120px !important; padding: 10px; gap: 8px; 
-                font-size: 0.7rem; /* 手机端字体微缩 */
+                width: 130px !important; padding: 12px; gap: 12px; 
+                display: flex; flex-direction: column; align-items: stretch;
             }
-            .control-group { padding: 10px; gap: 6px; }
+            .control-group { padding: 10px; gap: 8px; }
             .control-header { font-size: 0.75rem; }
-            .color-preview { width: 30px; height: 30px; }
+            .color-preview { width: 35px; height: 35px; }
+            
+            /* 手机端放大随机和贴纸按钮 */
+            #random-btn, #sticker-main-btn { 
+                padding: 12px 5px !important; 
+                font-size: 0.85rem !important; 
+                border-radius: 15px !important;
+            }
+            .sticker-container { margin-top: 0; } /* 紧随随机按钮之后 */
+
             .workspace { padding: 10px; }
-            .upload-card { width: 180px; height: 180px; padding: 0; border-radius: 15px; }
-            .upload-card h2 { font-size: 0.9rem; }
-            #sticker-menu { width: 110px; bottom: 50px; font-size: 0.7rem; }
-            .sticker-opt { padding: 5px; font-size: 0.7rem; }
+            /* 手机端启动正方形：文字居中 */
+            .upload-card { 
+                width: 200px; height: 200px; padding: 0; 
+                display: flex; flex-direction: column; 
+                justify-content: center; align-items: center; 
+                border-radius: 15px; 
+            }
+            .upload-card h2 { font-size: 0.95rem; margin: 0 0 15px 0 !important; }
+            #sticker-menu { width: 120px; bottom: 60px; font-size: 0.75rem; }
         }
     </style>
 </head>
@@ -112,7 +126,8 @@
                 <div class="control-header"><label>对比度</label><span id="threshVal">5</span></div>
                 <input type="range" id="threshIn" min="1" max="10" value="5">
             </div>
-            <button class="btn-p" style="background: var(--morandi-blue); padding: 8px; font-size: 0.8rem;" onclick="randomize()">🎲 随机</button>
+            <button id="random-btn" class="btn-p" style="background: var(--morandi-blue); padding: 8px;" onclick="randomize()">🎲 随机一下</button>
+            
             <div class="sticker-container">
                 <div id="sticker-menu">
                     <button class="sticker-opt" onclick="applyRealSticker('stars')">星星</button>
@@ -121,7 +136,7 @@
                     <button class="sticker-opt" onclick="applyRealSticker('cat')">Hello Kitty</button>
                     <button class="sticker-opt" onclick="applyRealSticker('star2')">另一种星星</button>
                 </div>
-                <button class="btn-p" id="sticker-main-btn" style="width:100%; background: var(--morandi-green); padding: 8px;" onclick="toggleStickerMenu()">🌟 贴纸</button>
+                <button class="btn-p" id="sticker-main-btn" style="width:100%; background: var(--morandi-green); padding: 8px;" onclick="toggleStickerMenu()">🌟 贴纸一下</button>
             </div>
         </aside>
         <div class="workspace">
@@ -129,8 +144,8 @@
                 <div class="upload-card">
                     <h2>上传底片</h2>
                     <input type="file" id="fInput" accept="image/*" style="display:none">
-                    <button class="btn-p" style="padding: 10px 20px; font-size: 0.8rem;" onclick="document.getElementById('fInput').click()">点击上传</button>
-                    <div id="cut-tools" style="display:none; margin-top:20px;">
+                    <button class="btn-p" style="padding: 10px 18px; font-size: 0.85rem;" onclick="document.getElementById('fInput').click()">点击上传图片</button>
+                    <div id="cut-tools" style="display:none; margin-top:15px;">
                         <button class="btn-p" id="ai-btn" style="background:var(--morandi-blue); padding: 8px 15px;" onclick="runAI()">🤖 智能抠图</button>
                     </div>
                 </div>
