@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0/dist/body-pix.min.js"></script>
     <style>
         :root {
-            --bg-color: rgb(255, 254, 254);
+            --bg-color: rgb(251, 242, 245);
             --panel-bg: #FEFDF5;
             --text-brown: #625044;
             --morandi-green: #bfda9d;
@@ -55,49 +55,35 @@
         .overlay { position: absolute; inset: 0; background: var(--bg-color); z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .upload-card { background: var(--panel-bg); padding: 50px; border-radius: 32px; box-shadow: var(--shadow); text-align: center; width: 400px; }
         .disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
-        .sticker-container { position: relative; width: 100%; } /* 取消手机端 margin-top: auto */
+        .sticker-container { position: relative; width: 100%; }
         #sticker-menu {
-            position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%);
+            position: absolute; 
+            top: 60px; /* 修正：贴纸小窗改为在按钮下方 */
+            left: 50%; transform: translateX(-50%);
             background: white; border-radius: 15px; border: 2px solid var(--text-brown);
             padding: 10px; display: none; flex-direction: column; gap: 8px;
             box-shadow: var(--shadow); z-index: 2000; width: 150px;
+        }
+        /* 调整小窗箭头指向 */
+        #sticker-menu::after {
+            content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 8px solid var(--text-brown);
         }
         .sticker-opt {
             background: var(--panel-bg); border: 1px solid #EEE; padding: 8px;
             border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: bold;
         }
 
-        /* --- 修正版：手机端并排布局 + 按钮尺寸微调 --- */
         @media screen and (max-width: 768px) {
             nav { padding: 0 10px; height: 60px; }
             .logo { font-size: 1rem; }
             nav .btn-p { padding: 6px 10px; font-size: 0.75rem; border-radius: 8px; }
-            .sidebar { 
-                width: 130px !important; padding: 12px; gap: 12px; 
-                display: flex; flex-direction: column; align-items: stretch;
-            }
+            .sidebar { width: 130px !important; padding: 12px; gap: 12px; }
             .control-group { padding: 10px; gap: 8px; }
-            .control-header { font-size: 0.75rem; }
-            .color-preview { width: 35px; height: 35px; }
-            
-            /* 手机端放大随机和贴纸按钮 */
-            #random-btn, #sticker-main-btn { 
-                padding: 12px 5px !important; 
-                font-size: 0.85rem !important; 
-                border-radius: 15px !important;
-            }
-            .sticker-container { margin-top: 0; } /* 紧随随机按钮之后 */
-
+            #random-btn, #sticker-main-btn { padding: 12px 5px !important; font-size: 0.85rem !important; border-radius: 15px !important; }
             .workspace { padding: 10px; }
-            /* 手机端启动正方形：文字居中 */
-            .upload-card { 
-                width: 200px; height: 200px; padding: 0; 
-                display: flex; flex-direction: column; 
-                justify-content: center; align-items: center; 
-                border-radius: 15px; 
-            }
+            .upload-card { width: 200px; height: 200px; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 15px; }
             .upload-card h2 { font-size: 0.95rem; margin: 0 0 15px 0 !important; }
-            #sticker-menu { width: 120px; bottom: 60px; font-size: 0.75rem; }
         }
     </style>
 </head>
@@ -127,7 +113,6 @@
                 <input type="range" id="threshIn" min="1" max="10" value="5">
             </div>
             <button id="random-btn" class="btn-p" style="background: var(--morandi-blue); padding: 8px;" onclick="randomize()">🎲 随机一下</button>
-            
             <div class="sticker-container">
                 <div id="sticker-menu">
                     <button class="sticker-opt" onclick="applyRealSticker('stars')">星星</button>
@@ -180,8 +165,10 @@
                 const img = new Image();
                 img.crossOrigin = "Anonymous";
                 img.onload = () => { 
+                    // 修正 2：完全保留原文件上传模式，不进行任何缩放/旋转改动
                     rawImg = img;
-                    mCanvas.width = img.width; mCanvas.height = img.height;
+                    mCanvas.width = img.width; 
+                    mCanvas.height = img.height;
                     document.getElementById('cut-tools').style.display = 'block'; 
                 };
                 img.src = ev.target.result;
@@ -297,10 +284,15 @@
             const link = document.createElement('a'); link.download = 'VibePrint.png';
             link.href = mCanvas.toDataURL(); link.click();
         }
-        document.querySelectorAll('input').forEach(i => i.oninput = draw);
-        document.getElementById('inkColor').onchange = (e) => {
-            selectedInk = e.target.value; document.getElementById('inkPrev').style.background = selectedInk; draw();
+        
+        // 修正 1：将 onchange 改为 oninput，实现点击颜色盘即刻实时渲染
+        document.getElementById('inkColor').oninput = (e) => {
+            selectedInk = e.target.value; 
+            document.getElementById('inkPrev').style.background = selectedInk; 
+            draw();
         };
+
+        document.querySelectorAll('input[type="range"]').forEach(i => i.oninput = draw);
     </script>
 </body>
 </html>
