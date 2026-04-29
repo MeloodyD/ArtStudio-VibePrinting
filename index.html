@@ -57,17 +57,10 @@
         .disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
         .sticker-container { position: relative; width: 100%; }
         #sticker-menu {
-            position: absolute; 
-            top: 60px; /* 修正：贴纸小窗改为在按钮下方 */
-            left: 50%; transform: translateX(-50%);
+            position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
             background: white; border-radius: 15px; border: 2px solid var(--text-brown);
             padding: 10px; display: none; flex-direction: column; gap: 8px;
             box-shadow: var(--shadow); z-index: 2000; width: 150px;
-        }
-        /* 调整小窗箭头指向 */
-        #sticker-menu::after {
-            content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
-            border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 8px solid var(--text-brown);
         }
         .sticker-opt {
             background: var(--panel-bg); border: 1px solid #EEE; padding: 8px;
@@ -82,7 +75,13 @@
             .control-group { padding: 10px; gap: 8px; }
             #random-btn, #sticker-main-btn { padding: 12px 5px !important; font-size: 0.85rem !important; border-radius: 15px !important; }
             .workspace { padding: 10px; }
-            .upload-card { width: 200px; height: 200px; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 15px; }
+            /* 修正：文字居中 */
+            .upload-card { 
+                width: 200px; height: 200px; padding: 0; 
+                display: flex; flex-direction: column; 
+                justify-content: center; align-items: center; 
+                border-radius: 15px; 
+            }
             .upload-card h2 { font-size: 0.95rem; margin: 0 0 15px 0 !important; }
         }
     </style>
@@ -100,7 +99,7 @@
             <div class="control-group">
                 <div class="control-header"><label>颜色</label></div>
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <div id="inkPrev" class="color-preview" onclick="document.getElementById('inkColor').click()"></div>
+                    <div id="inkPrev" class="color-preview"></div>
                     <input type="color" id="inkColor" value="#2B4C9B" style="opacity:0; width:0; height:0;">
                 </div>
             </div>
@@ -165,7 +164,6 @@
                 const img = new Image();
                 img.crossOrigin = "Anonymous";
                 img.onload = () => { 
-                    // 修正 2：完全保留原文件上传模式，不进行任何缩放/旋转改动
                     rawImg = img;
                     mCanvas.width = img.width; 
                     mCanvas.height = img.height;
@@ -284,11 +282,24 @@
             const link = document.createElement('a'); link.download = 'VibePrint.png';
             link.href = mCanvas.toDataURL(); link.click();
         }
+
+        // --- 修正点 B：移动端兼容的点击逻辑 ---
+        const inkPrev = document.getElementById('inkPrev');
+        const inkColor = document.getElementById('inkColor');
+
+        // 使用交互式事件触发
+        const triggerColor = (e) => {
+            inkColor.click();
+            e.preventDefault();
+        };
         
-        // 修正 1：将 onchange 改为 oninput，实现点击颜色盘即刻实时渲染
-        document.getElementById('inkColor').oninput = (e) => {
+        inkPrev.addEventListener('click', triggerColor);
+        inkPrev.addEventListener('touchstart', triggerColor);
+
+        // 实时渲染
+        inkColor.oninput = (e) => {
             selectedInk = e.target.value; 
-            document.getElementById('inkPrev').style.background = selectedInk; 
+            inkPrev.style.backgroundColor = selectedInk; 
             draw();
         };
 
