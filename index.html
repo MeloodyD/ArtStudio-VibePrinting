@@ -67,21 +67,30 @@
             border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: bold;
         }
 
+        /* --- 极简优化：手机端侧边栏并排补丁 --- */
         @media screen and (max-width: 768px) {
-            nav { padding: 0 15px; height: 60px; }
-            .logo { font-size: 1.1rem; }
-            nav .btn-p { padding: 8px 12px; font-size: 0.85rem; border-radius: 12px; }
-            main { flex-direction: column; overflow-y: auto; }
-            .sidebar { width: 100%; order: 2; border-right: none; height: auto; padding: 15px; overflow-y: visible; }
-            .workspace { order: 1; padding: 10px; min-height: 40vh; flex: none; display: flex; align-items: center; }
-            .upload-card { width: 280px; height: 280px; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 20px; }
+            nav { padding: 0 10px; height: 60px; }
+            .logo { font-size: 1rem; }
+            nav .btn-p { padding: 6px 10px; font-size: 0.75rem; border-radius: 8px; }
+            .sidebar { 
+                width: 120px !important; padding: 10px; gap: 8px; 
+                font-size: 0.7rem; /* 手机端字体微缩 */
+            }
+            .control-group { padding: 10px; gap: 6px; }
+            .control-header { font-size: 0.75rem; }
+            .color-preview { width: 30px; height: 30px; }
+            .workspace { padding: 10px; }
+            .upload-card { width: 180px; height: 180px; padding: 0; border-radius: 15px; }
+            .upload-card h2 { font-size: 0.9rem; }
+            #sticker-menu { width: 110px; bottom: 50px; font-size: 0.7rem; }
+            .sticker-opt { padding: 5px; font-size: 0.7rem; }
         }
     </style>
 </head>
 <body>
     <nav>
         <div class="logo">VibePrinting</div>
-        <div style="display:flex; gap:15px;">
+        <div style="display:flex; gap:10px;">
             <button class="btn-p" style="background:#B9B4A7;" onclick="location.reload()">重新上传</button>
             <button class="btn-p" onclick="exportArt()">导出作品</button>
         </div>
@@ -90,22 +99,20 @@
         <aside id="sidebar" class="sidebar disabled">
             <div class="control-group">
                 <div class="control-header"><label>颜色</label></div>
-                <div style="display:flex; align-items:center; gap:15px;">
+                <div style="display:flex; align-items:center; gap:10px;">
                     <div id="inkPrev" class="color-preview" onclick="document.getElementById('inkColor').click()"></div>
                     <input type="color" id="inkColor" value="#2B4C9B" style="opacity:0; width:0; height:0;">
                 </div>
             </div>
             <div class="control-group">
-                <div class="control-header"><label>网点大小</label><span id="dotVal">7</span></div>
+                <div class="control-header"><label>网点</label><span id="dotVal">7</span></div>
                 <input type="range" id="dotIn" min="1" max="10" value="7">
             </div>
             <div class="control-group">
                 <div class="control-header"><label>对比度</label><span id="threshVal">5</span></div>
                 <input type="range" id="threshIn" min="1" max="10" value="5">
             </div>
-            <div class="control-group" style="cursor:pointer; text-align:center; background: var(--morandi-blue); color:white;" onclick="randomize()">
-                <div style="font-weight:900;">🎲 随机一下参数</div>
-            </div>
+            <button class="btn-p" style="background: var(--morandi-blue); padding: 8px; font-size: 0.8rem;" onclick="randomize()">🎲 随机</button>
             <div class="sticker-container">
                 <div id="sticker-menu">
                     <button class="sticker-opt" onclick="applyRealSticker('stars')">星星</button>
@@ -114,17 +121,17 @@
                     <button class="sticker-opt" onclick="applyRealSticker('cat')">Hello Kitty</button>
                     <button class="sticker-opt" onclick="applyRealSticker('star2')">另一种星星</button>
                 </div>
-                <button class="btn-p" id="sticker-main-btn" style="width:100%; background: var(--morandi-green);" onclick="toggleStickerMenu()">🌟 贴纸一下</button>
+                <button class="btn-p" id="sticker-main-btn" style="width:100%; background: var(--morandi-green); padding: 8px;" onclick="toggleStickerMenu()">🌟 贴纸</button>
             </div>
         </aside>
         <div class="workspace">
             <div id="step-layer" class="overlay">
                 <div class="upload-card">
-                    <h2 style="margin: 0 0 20px 0;">上传底片</h2>
+                    <h2>上传底片</h2>
                     <input type="file" id="fInput" accept="image/*" style="display:none">
-                    <button class="btn-p" onclick="document.getElementById('fInput').click()">点击上传图片</button>
-                    <div id="cut-tools" style="display:none; margin-top:30px;">
-                        <button class="btn-p" id="ai-btn" style="background:var(--morandi-blue)" onclick="runAI()">🤖 智能抠图</button>
+                    <button class="btn-p" style="padding: 10px 20px; font-size: 0.8rem;" onclick="document.getElementById('fInput').click()">点击上传</button>
+                    <div id="cut-tools" style="display:none; margin-top:20px;">
+                        <button class="btn-p" id="ai-btn" style="background:var(--morandi-blue); padding: 8px 15px;" onclick="runAI()">🤖 智能抠图</button>
                     </div>
                 </div>
             </div>
@@ -142,14 +149,10 @@
         stickerAssets.stars.src = 'Star.png'; stickerAssets.y2k.src = 'Y2K.png';
         stickerAssets.dog.src = 'Dog.png'; stickerAssets.cat.src = 'Cat.png'; stickerAssets.star2.src = 'Star2.png';
 
-        // 极速加速方案：页面加载即启动预载逻辑
         async function loadModel() {
             if(!bpNet) {
                 bpNet = await bodyPix.load({
-                    architecture: 'MobileNetV1',
-                    outputStride: 16,
-                    multiplier: 0.5, // 速度与精度的完美平衡点
-                    quantBytes: 2    // 启用 2 字节量化，大幅缩小模型体积并加速计算
+                    architecture: 'MobileNetV1', outputStride: 16, multiplier: 0.5, quantBytes: 2
                 });
             }
         }
@@ -173,31 +176,20 @@
 
         async function runAI() {
             const btn = document.getElementById('ai-btn');
-            btn.innerText = "⏳ 极速抠图中...";
+            btn.innerText = "⏳ 处理中...";
             try {
                 await loadModel();
-                // 极速设置：internalResolution 设为 low，大幅减少像素计算量
-                const seg = await bpNet.segmentPerson(rawImg, {
-                    internalResolution: 'low', 
-                    segmentationThreshold: 0.7,
-                    maxDetections: 1
-                });
-                
+                const seg = await bpNet.segmentPerson(rawImg, { internalResolution: 'low', segmentationThreshold: 0.7 });
                 const mask = bodyPix.toMask(seg, {r:255,g:255,b:255,a:255}, {r:0,g:0,b:0,a:0});
                 const offC = document.createElement('canvas');
                 offC.width = rawImg.width; offC.height = rawImg.height;
                 const oCtx = offC.getContext('2d');
-                oCtx.putImageData(mask, 0, 0);
-                oCtx.globalCompositeOperation = 'source-in';
-                oCtx.drawImage(rawImg, 0, 0);
-                
-                cutoutImg = offC;
-                isProcessed = true;
+                oCtx.putImageData(mask, 0, 0); oCtx.globalCompositeOperation = 'source-in'; oCtx.drawImage(rawImg, 0, 0);
+                cutoutImg = offC; isProcessed = true;
                 document.getElementById('step-layer').style.display = 'none';
                 document.getElementById('sidebar').classList.remove('disabled');
-                initInteractions();
-                draw();
-            } catch (e) { alert("AI 引擎稍显疲惫，请刷新页面重试。"); }
+                initInteractions(); draw();
+            } catch (e) { alert("AI处理失败，请重试"); }
             btn.innerText = "🤖 智能抠图";
         }
 
@@ -211,7 +203,6 @@
             const tC = document.createElement('canvas');
             tC.width = mCanvas.width; tC.height = mCanvas.height;
             const tCtx = tC.getContext('2d');
-            
             tCtx.save();
             tCtx.translate(mCanvas.width/2 + posX, mCanvas.height/2 + posY);
             tCtx.scale(scale, scale);
@@ -221,7 +212,6 @@
             const imgData = tCtx.getImageData(0, 0, mCanvas.width, mCanvas.height).data;
             mCtx.clearRect(0, 0, mCanvas.width, mCanvas.height);
             mCtx.fillStyle = selectedInk;
-
             for(let y=0; y<mCanvas.height; y+=dot) {
                 for(let x=0; x<mCanvas.width; x+=dot) {
                     const i = (y * mCanvas.width + x) * 4;
@@ -248,15 +238,13 @@
                 if(!isDragging) return;
                 if(e.touches && e.touches.length === 2) {
                     const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                    scale *= dist / lastDist;
-                    lastDist = dist;
+                    scale *= dist / lastDist; lastDist = dist;
                 } else {
                     const p = e.touches ? e.touches[0] : e;
                     posX += p.clientX - lastX; posY += p.clientY - lastY;
                     lastX = p.clientX; lastY = p.clientY;
                 }
-                draw();
-                e.preventDefault();
+                draw(); e.preventDefault();
             };
             const stop = () => { isDragging = false; lastDist = 0; };
             mCanvas.addEventListener('mousedown', start);
@@ -268,8 +256,7 @@
             mCanvas.addEventListener('wheel', (e) => {
                 scale += e.deltaY * -0.001;
                 scale = Math.max(0.1, Math.min(scale, 5));
-                draw();
-                e.preventDefault();
+                draw(); e.preventDefault();
             }, {passive:false});
         }
 
@@ -292,15 +279,12 @@
             draw();
         }
         function exportArt() {
-            const link = document.createElement('a');
-            link.download = 'VibePrint.png';
+            const link = document.createElement('a'); link.download = 'VibePrint.png';
             link.href = mCanvas.toDataURL(); link.click();
         }
         document.querySelectorAll('input').forEach(i => i.oninput = draw);
         document.getElementById('inkColor').onchange = (e) => {
-            selectedInk = e.target.value;
-            document.getElementById('inkPrev').style.background = selectedInk;
-            draw();
+            selectedInk = e.target.value; document.getElementById('inkPrev').style.background = selectedInk; draw();
         };
     </script>
 </body>
