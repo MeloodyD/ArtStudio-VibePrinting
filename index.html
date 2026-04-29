@@ -53,7 +53,14 @@
         #canvas-wrap { position: relative; border-radius: var(--radius-box); overflow: hidden; box-shadow: var(--shadow); }
         canvas { max-width: 100%; max-height: 80vh; background: white; cursor: grab; }
         .overlay { position: absolute; inset: 0; background: var(--bg-color); z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .upload-card { background: var(--panel-bg); padding: 50px; border-radius: 32px; box-shadow: var(--shadow); text-align: center; width: 400px; }
+        
+        /* 核心修复：调高上传卡片的层级，确保不被遮挡 */
+        .upload-card { 
+            background: var(--panel-bg); padding: 50px; border-radius: 32px; 
+            box-shadow: var(--shadow); text-align: center; width: 400px; 
+            position: relative; z-index: 999 !important; 
+        }
+
         .disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
         .sticker-container { position: relative; width: 100%; }
         #sticker-menu {
@@ -61,6 +68,10 @@
             background: white; border-radius: 15px; border: 2px solid var(--text-brown);
             padding: 10px; display: none; flex-direction: column; gap: 8px;
             box-shadow: var(--shadow); z-index: 2000; width: 150px;
+        }
+        #sticker-menu::after {
+            content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 8px solid var(--text-brown);
         }
         .sticker-opt {
             background: var(--panel-bg); border: 1px solid #EEE; padding: 8px;
@@ -75,7 +86,11 @@
             .control-group { padding: 10px; gap: 8px; }
             #random-btn, #sticker-main-btn { padding: 12px 5px !important; font-size: 0.85rem !important; border-radius: 15px !important; }
             .workspace { padding: 10px; }
-            .upload-card { width: 200px; height: 200px; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 15px; }
+            .upload-card { 
+                width: 200px; height: 200px; padding: 0; 
+                display: flex; flex-direction: column; justify-content: center; align-items: center; 
+                border-radius: 15px; 
+            }
             .upload-card h2 { font-size: 0.95rem; margin: 0 0 15px 0 !important; }
         }
     </style>
@@ -93,9 +108,9 @@
             <div class="control-group">
                 <div class="control-header"><label>颜色</label></div>
                 <div style="display:flex; align-items:center; gap:10px; position: relative; width: 45px; height: 45px;">
-                    <div id="inkPrev" class="color-preview" style="position: absolute; left: 0; top: 0; z-index: 1; margin: 0;"></div>
+                    <div id="inkPrev" class="color-preview" style="position: absolute; left:0; top:0; z-index:1; margin:0;"></div>
                     <input type="color" id="inkColor" value="#2B4C9B" 
-                           style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2; padding: 0; border: none;">
+                           style="position: absolute; left:0; top:0; width:45px; height:45px; opacity:0; z-index:2; cursor:pointer; padding:0; border:none; outline:none;">
                 </div>
             </div>
             <div class="control-group">
@@ -154,14 +169,14 @@
 
         document.getElementById('fInput').onchange = (e) => {
             const file = e.target.files[0];
+            if(!file) return;
             const reader = new FileReader();
             reader.onload = (ev) => {
                 const img = new Image();
                 img.crossOrigin = "Anonymous";
                 img.onload = () => { 
                     rawImg = img;
-                    mCanvas.width = img.width; 
-                    mCanvas.height = img.height;
+                    mCanvas.width = img.width; mCanvas.height = img.height;
                     document.getElementById('cut-tools').style.display = 'block'; 
                 };
                 img.src = ev.target.result;
@@ -232,4 +247,58 @@
             const move = (e) => {
                 if(!isDragging) return;
                 if(e.touches && e.touches.length === 2) {
-                    const dist = Math.hypot(e.touches
+                    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                    scale *= dist / lastDist; lastDist = dist;
+                } else {
+                    const p = e.touches ? e.touches[0] : e;
+                    posX += p.clientX - lastX; posY += p.clientY - lastY;
+                    lastX = p.clientX; lastY = p.clientY;
+                }
+                draw(); e.preventDefault();
+            };
+            const stop = () => { isDragging = false; lastDist = 0; };
+            mCanvas.addEventListener('mousedown', start);
+            mCanvas.addEventListener('touchstart', start, {passive:false});
+            window.addEventListener('mousemove', move);
+            window.addEventListener('touchmove', move, {passive:false});
+            window.addEventListener('mouseup', stop);
+            window.addEventListener('touchend', stop);
+            mCanvas.addEventListener('wheel', (e) => {
+                scale += e.deltaY * -0.001;
+                scale = Math.max(0.1, Math.min(scale, 5));
+                draw(); e.preventDefault();
+            }, {passive:false});
+        }
+
+        function toggleStickerMenu() {
+            if(!isProcessed) return;
+            const menu = document.getElementById('sticker-menu');
+            menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
+        }
+        function applyRealSticker(type) {
+            currentStickerType = (currentStickerType === type) ? null : type;
+            draw(); document.getElementById('sticker-menu').style.display = 'none';
+        }
+        function randomize() {
+            document.getElementById('dotIn').value = Math.floor(Math.random()*9)+1;
+            document.getElementById('threshIn').value = Math.floor(Math.random()*9)+1;
+            const colors = ['#2B4C9B', '#6F4E37', '#8DA86D', '#D43F8D', '#E8A1B5', '#8C847D', '#7B9B8E'];
+            selectedInk = colors[Math.floor(Math.random()*colors.length)];
+            document.getElementById('inkPrev').style.background = selectedInk;
+            document.getElementById('inkColor').value = selectedInk;
+            draw();
+        }
+        function exportArt() {
+            const link = document.createElement('a'); link.download = 'VibePrint.png';
+            link.href = mCanvas.toDataURL(); link.click();
+        }
+
+        document.getElementById('inkColor').oninput = (e) => {
+            selectedInk = e.target.value; 
+            document.getElementById('inkPrev').style.background = selectedInk; 
+            draw();
+        };
+        document.querySelectorAll('input[type="range"]').forEach(i => i.oninput = draw);
+    </script>
+</body>
+</html>
