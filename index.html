@@ -72,6 +72,22 @@
             border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: bold;
         }
         .sticker-opt:hover { background: var(--bg-color); }
+
+        /* --- 修正 D: 针对手机端的媒体查询补丁 --- */
+        @media screen and (max-width: 768px) {
+            body { height: auto; overflow: auto; }
+            nav { padding: 0 15px; }
+            main { flex-direction: column; }
+            .sidebar { 
+                width: 100%; padding: 15px; background: var(--panel-bg); 
+                border-right: none; border-bottom: 1px solid rgba(111, 78, 55, 0.05); 
+                overflow-y: visible; gap: 10px; order: 2; 
+            }
+            .workspace { width: 100%; padding: 15px; order: 1; min-height: 40vh; }
+            .upload-card { width: 90%; padding: 25px; }
+            canvas { max-width: 100%; height: auto; }
+            #sticker-menu { bottom: 60px; }
+        }
     </style>
 </head>
 <body>
@@ -146,7 +162,6 @@
         let currentStickerType = null; 
 
         // 修正 B: 模型状态追踪
-        let isModelLoaded = false;
         let bpNet = null;
 
         const stickerAssets = { stars: new Image(), y2k: new Image() };
@@ -170,14 +185,41 @@
         };
 
         async function runAI() {
+            console.log("AI 模型启动中...");
+            const btn = document.getElementById('step-layer').querySelector('button[onclick="runAI()"]');
+            const originalText = btn.innerText;
+            btn.innerText = "⏳ 加载中...";
+            btn.disabled = true;
+
             try {
-                if(!bpNet) bpNet = await bodyPix.load();
-                const seg = await bpNet.segmentPerson(rawImg);
+                // --- 移动端性能补丁: 轻量化加载 ---
+                if (!bpNet) {
+                    bpNet = await bodyPix.load({
+                        architecture: 'MobileNetV1',
+                        outputStride: 16,
+                        multiplier: 0.5,
+                        quantBytes: 2
+                    });
+                }
+                
+                // --- 移动端性能补丁: 降低解析度防止闪退 ---
+                const seg = await bpNet.segmentPerson(rawImg, {
+                    internalResolution: 'low',
+                    segmentationThreshold: 0.7
+                });
+                
                 const mask = bodyPix.toMask(seg, {r:255,g:255,b:255,a:255}, {r:0,g:0,b:0,a:0});
                 initCanvases(rawImg.width, rawImg.height);
                 msCtx.putImageData(mask, 0, 0);
                 finalizeCutout();
-            } catch (e) { runManual(); }
+            } catch (e) { 
+                console.error("AI Error:", e);
+                alert("智能抠图压力过大，已为您切换为『手动模式』✨");
+                runManual(); 
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
         }
 
         function runManual() {
@@ -210,17 +252,24 @@
         function initDrawEvents() {
             let drawing = false;
             mCanvas.onmousedown = () => drawing = true;
+            mCanvas.ontouchstart = (e) => { drawing = true; e.preventDefault(); };
             window.onmouseup = () => drawing = false;
-            mCanvas.onmousemove = (e) => {
+            window.ontouchend = () => drawing = false;
+            
+            const handleMove = (e) => {
                 if(!drawing || !isEditing) return;
                 const rect = mCanvas.getBoundingClientRect();
                 const scale = maskCanvas.width / rect.width;
-                const x = (e.clientX - rect.left) * scale;
-                const y = (e.clientY - rect.top) * scale;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const x = (clientX - rect.left) * scale;
+                const y = (clientY - rect.top) * scale;
                 const size = document.getElementById('brushSize').value * scale;
                 msCtx.fillStyle = (currentTool === 'draw') ? 'white' : 'black';
                 msCtx.beginPath(); msCtx.arc(x, y, size/2, 0, Math.PI*2); msCtx.fill();
             };
+            mCanvas.onmousemove = handleMove;
+            mCanvas.ontouchmove = handleMove;
         }
 
         function setTool(t) {
