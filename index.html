@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VibePrinting :D - Morandi Art Studio</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0/dist/body-pix.min.js"></script>
     <style>
@@ -49,11 +49,9 @@
         input[type="range"]::-webkit-slider-runnable-track { background: #E0E0E0; height: 8px; border-radius: 4px; }
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; height: 22px; width: 22px; border-radius: 50%; background: var(--morandi-green); margin-top: -7px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
         .color-preview { width: 45px; height: 45px; border-radius: 12px; background: #2B4C9B; border: 3px solid white; box-shadow: var(--shadow); cursor: pointer; }
-        .tool-btn { flex: 1; padding: 8px; border-radius: 10px; border: 2px solid #EEE; background: white; cursor: pointer; font-weight: bold; color: #999; }
-        .tool-btn.active { border-color: var(--morandi-green); color: var(--morandi-green); background: rgba(141, 168, 109, 0.1); }
         .workspace { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; position: relative; }
         #canvas-wrap { position: relative; border-radius: var(--radius-box); overflow: hidden; box-shadow: var(--shadow); }
-        canvas { max-width: 100%; max-height: 80vh; background: white; }
+        canvas { max-width: 100%; max-height: 80vh; background: white; cursor: grab; }
         .overlay { position: absolute; inset: 0; background: var(--bg-color); z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .upload-card { background: var(--panel-bg); padding: 50px; border-radius: 32px; box-shadow: var(--shadow); text-align: center; width: 400px; }
         .disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
@@ -64,24 +62,19 @@
             padding: 10px; display: none; flex-direction: column; gap: 8px;
             box-shadow: var(--shadow); z-index: 2000; width: 150px;
         }
-        #sticker-menu::after {
-            content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
-            border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 8px solid var(--text-brown);
-        }
         .sticker-opt {
             background: var(--panel-bg); border: 1px solid #EEE; padding: 8px;
             border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: bold;
         }
-        .sticker-opt:hover { background: var(--bg-color); }
 
-        /* --- 仅针对手机端的优化，不影响电脑端 --- */
         @media screen and (max-width: 768px) {
-            body { height: auto; overflow: auto; }
-            main { flex-direction: column; }
-            .sidebar { width: 100%; order: 2; border-right: none; border-top: 1px solid rgba(0,0,0,0.05); }
-            .workspace { width: 100%; order: 1; padding: 20px; min-height: 300px; }
-            .upload-card { width: 90%; padding: 30px; }
-            canvas { max-height: 50vh; }
+            nav { padding: 0 15px; height: 60px; }
+            .logo { font-size: 1.1rem; }
+            nav .btn-p { padding: 8px 12px; font-size: 0.85rem; border-radius: 12px; }
+            main { flex-direction: column; overflow-y: auto; }
+            .sidebar { width: 100%; order: 2; border-right: none; height: auto; padding: 15px; overflow-y: visible; }
+            .workspace { order: 1; padding: 10px; min-height: 40vh; flex: none; display: flex; align-items: center; }
+            .upload-card { width: 280px; height: 280px; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 20px; }
         }
     </style>
 </head>
@@ -102,15 +95,6 @@
                     <input type="color" id="inkColor" value="#2B4C9B" style="opacity:0; width:0; height:0;">
                 </div>
             </div>
-            <div id="manual-controls" class="control-group" style="display:none; border: 2px solid var(--morandi-blue);">
-                <div class="control-header"><label>涂抹工具</label></div>
-                <div style="display:flex; gap:10px;">
-                    <button id="brushBtn" class="tool-btn active" onclick="setTool('draw')">画笔</button>
-                    <button id="eraserBtn" class="tool-btn" onclick="setTool('erase')">橡皮擦</button>
-                </div>
-                <input type="range" id="brushSize" min="5" max="100" value="40">
-                <button class="btn-p" onclick="finalizeCutout()">完成抠图确认</button>
-            </div>
             <div class="control-group">
                 <div class="control-header"><label>网点大小</label><span id="dotVal">7</span></div>
                 <input type="range" id="dotIn" min="1" max="10" value="7">
@@ -126,6 +110,9 @@
                 <div id="sticker-menu">
                     <button class="sticker-opt" onclick="applyRealSticker('stars')">星星</button>
                     <button class="sticker-opt" onclick="applyRealSticker('y2k')">复古y2k</button>
+                    <button class="sticker-opt" onclick="applyRealSticker('dog')">美式复古</button>
+                    <button class="sticker-opt" onclick="applyRealSticker('cat')">Hello Kitty</button>
+                    <button class="sticker-opt" onclick="applyRealSticker('star2')">另一种星星</button>
                 </div>
                 <button class="btn-p" id="sticker-main-btn" style="width:100%; background: var(--morandi-green);" onclick="toggleStickerMenu()">🌟 贴纸一下</button>
             </div>
@@ -133,28 +120,40 @@
         <div class="workspace">
             <div id="step-layer" class="overlay">
                 <div class="upload-card">
-                    <h2 style="margin-top:0;">上传底片</h2>
+                    <h2 style="margin: 0 0 20px 0;">上传底片</h2>
                     <input type="file" id="fInput" accept="image/*" style="display:none">
                     <button class="btn-p" onclick="document.getElementById('fInput').click()">点击上传图片</button>
                     <div id="cut-tools" style="display:none; margin-top:30px;">
-                        <div style="display:flex; gap:12px; justify-content:center;">
-                            <button class="btn-p" id="ai-btn" style="background:var(--morandi-blue)" onclick="runAI()">🤖 智能抠图</button>
-                            <button class="btn-p" style="background:#B9B4A7" onclick="runManual()">🖌️ 手动涂抹</button>
-                        </div>
+                        <button class="btn-p" id="ai-btn" style="background:var(--morandi-blue)" onclick="runAI()">🤖 智能抠图</button>
                     </div>
                 </div>
             </div>
             <div id="canvas-wrap"><canvas id="mCanvas"></canvas></div>
         </div>
     </main>
+
     <script>
         const mCanvas = document.getElementById('mCanvas');
         const mCtx = mCanvas.getContext('2d');
-        let rawImg = null, cutoutImg = null, selectedInk = "#2B4C9B", bpNet = null, isProcessed = false, currentStickerType = null;
-        const maskCanvas = document.createElement('canvas');
-        const msCtx = maskCanvas.getContext('2d');
-        const stickerAssets = { stars: new Image(), y2k: new Image() };
+        let rawImg = null, cutoutImg = null, selectedInk = "#2B4C9B", isProcessed = false, currentStickerType = null;
+        let bpNet = null, scale = 1, posX = 0, posY = 0, isDragging = false, lastX, lastY, lastDist = 0;
+
+        const stickerAssets = { stars: new Image(), y2k: new Image(), dog: new Image(), cat: new Image(), star2: new Image() };
         stickerAssets.stars.src = 'Star.png'; stickerAssets.y2k.src = 'Y2K.png';
+        stickerAssets.dog.src = 'Dog.png'; stickerAssets.cat.src = 'Cat.png'; stickerAssets.star2.src = 'Star2.png';
+
+        // 极速加速方案：页面加载即启动预载逻辑
+        async function loadModel() {
+            if(!bpNet) {
+                bpNet = await bodyPix.load({
+                    architecture: 'MobileNetV1',
+                    outputStride: 16,
+                    multiplier: 0.5, // 速度与精度的完美平衡点
+                    quantBytes: 2    // 启用 2 字节量化，大幅缩小模型体积并加速计算
+                });
+            }
+        }
+        loadModel();
 
         document.getElementById('fInput').onchange = (e) => {
             const file = e.target.files[0];
@@ -162,7 +161,11 @@
             reader.onload = (ev) => {
                 const img = new Image();
                 img.crossOrigin = "Anonymous";
-                img.onload = () => { rawImg = img; document.getElementById('cut-tools').style.display = 'block'; };
+                img.onload = () => { 
+                    rawImg = img;
+                    mCanvas.width = img.width; mCanvas.height = img.height;
+                    document.getElementById('cut-tools').style.display = 'block'; 
+                };
                 img.src = ev.target.result;
             };
             reader.readAsDataURL(file);
@@ -170,98 +173,60 @@
 
         async function runAI() {
             const btn = document.getElementById('ai-btn');
-            const originalText = btn.innerText;
-            btn.innerText = "⏳ 处理中...";
+            btn.innerText = "⏳ 极速抠图中...";
             try {
-                if(!bpNet) {
-                    bpNet = await bodyPix.load({
-                        architecture: 'MobileNetV1',
-                        outputStride: 16,
-                        multiplier: 0.5,
-                        quantBytes: 2
-                    });
-                }
+                await loadModel();
+                // 极速设置：internalResolution 设为 low，大幅减少像素计算量
                 const seg = await bpNet.segmentPerson(rawImg, {
-                    internalResolution: 'low',
-                    segmentationThreshold: 0.7
+                    internalResolution: 'low', 
+                    segmentationThreshold: 0.7,
+                    maxDetections: 1
                 });
+                
                 const mask = bodyPix.toMask(seg, {r:255,g:255,b:255,a:255}, {r:0,g:0,b:0,a:0});
-                initCanvases(rawImg.width, rawImg.height);
-                msCtx.putImageData(mask, 0, 0);
-                finalizeCutout();
-            } catch (e) { alert("智能抠图失败，已切换到手动模式"); runManual(); }
-            btn.innerText = originalText;
+                const offC = document.createElement('canvas');
+                offC.width = rawImg.width; offC.height = rawImg.height;
+                const oCtx = offC.getContext('2d');
+                oCtx.putImageData(mask, 0, 0);
+                oCtx.globalCompositeOperation = 'source-in';
+                oCtx.drawImage(rawImg, 0, 0);
+                
+                cutoutImg = offC;
+                isProcessed = true;
+                document.getElementById('step-layer').style.display = 'none';
+                document.getElementById('sidebar').classList.remove('disabled');
+                initInteractions();
+                draw();
+            } catch (e) { alert("AI 引擎稍显疲惫，请刷新页面重试。"); }
+            btn.innerText = "🤖 智能抠图";
         }
 
-        function runManual() {
-            initCanvases(rawImg.width, rawImg.height);
-            document.getElementById('step-layer').style.display = 'none';
-            document.getElementById('sidebar').classList.remove('disabled');
-            document.getElementById('manual-controls').style.display = 'flex';
-            msCtx.fillStyle = 'black'; msCtx.fillRect(0,0,maskCanvas.width,maskCanvas.height);
-            initDrawEvents();
-        }
-
-        function initCanvases(w, h) {
-            mCtx.clearRect(0,0,mCanvas.width,mCanvas.height);
-            mCanvas.width = maskCanvas.width = w;
-            mCanvas.height = maskCanvas.height = h;
-        }
-
-        function initDrawEvents() {
-            let drawing = false;
-            const getPos = (e) => {
-                const rect = mCanvas.getBoundingClientRect();
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                return {
-                    x: (clientX - rect.left) * (maskCanvas.width / rect.width),
-                    y: (clientY - rect.top) * (maskCanvas.height / rect.height)
-                };
-            };
-            const draw = (e) => {
-                if(!drawing) return;
-                const pos = getPos(e);
-                const size = document.getElementById('brushSize').value * (maskCanvas.width / mCanvas.clientWidth);
-                msCtx.fillStyle = (currentTool === 'draw') ? 'white' : 'black';
-                msCtx.beginPath(); msCtx.arc(pos.x, pos.y, size/2, 0, Math.PI*2); msCtx.fill();
-            };
-            mCanvas.onmousedown = mCanvas.ontouchstart = (e) => { drawing = true; draw(e); if(e.touches) e.preventDefault(); };
-            window.onmouseup = window.ontouchend = () => drawing = false;
-            mCanvas.onmousemove = mCanvas.ontouchmove = draw;
-        }
-
-        function setTool(t) {
-            currentTool = t;
-            document.getElementById('brushBtn').classList.toggle('active', t==='draw');
-            document.getElementById('eraserBtn').classList.toggle('active', t==='erase');
-        }
-
-        function finalizeCutout() {
-            document.getElementById('step-layer').style.display = 'none';
-            document.getElementById('sidebar').classList.remove('disabled');
-            document.getElementById('manual-controls').style.display = 'none';
-            const offC = document.createElement('canvas');
-            offC.width = mCanvas.width; offC.height = mCanvas.height;
-            const oCtx = offC.getContext('2d');
-            oCtx.drawImage(maskCanvas, 0, 0); oCtx.globalCompositeOperation = 'source-in'; oCtx.drawImage(rawImg, 0, 0);
-            cutoutImg = offC; isProcessed = true; drawArt();
-        }
-
-        function drawArt() {
-            if(!cutoutImg) return; 
+        function draw() {
+            if(!cutoutImg) return;
             const dot = parseInt(document.getElementById('dotIn').value);
             const thr = (11 - parseInt(document.getElementById('threshIn').value)) * 25.5;
             document.getElementById('dotVal').innerText = dot;
             document.getElementById('threshVal').innerText = document.getElementById('threshIn').value;
-            const data = cutoutImg.getContext('2d').getImageData(0,0,mCanvas.width,mCanvas.height).data;
-            mCtx.clearRect(0,0,mCanvas.width,mCanvas.height);
+
+            const tC = document.createElement('canvas');
+            tC.width = mCanvas.width; tC.height = mCanvas.height;
+            const tCtx = tC.getContext('2d');
+            
+            tCtx.save();
+            tCtx.translate(mCanvas.width/2 + posX, mCanvas.height/2 + posY);
+            tCtx.scale(scale, scale);
+            tCtx.drawImage(cutoutImg, -cutoutImg.width/2, -cutoutImg.height/2);
+            tCtx.restore();
+
+            const imgData = tCtx.getImageData(0, 0, mCanvas.width, mCanvas.height).data;
+            mCtx.clearRect(0, 0, mCanvas.width, mCanvas.height);
             mCtx.fillStyle = selectedInk;
+
             for(let y=0; y<mCanvas.height; y+=dot) {
                 for(let x=0; x<mCanvas.width; x+=dot) {
                     const i = (y * mCanvas.width + x) * 4;
-                    if(data[i+3] < 128) continue;
-                    const gray = data[i]*0.3 + data[i+1]*0.59 + data[i+2]*0.11;
+                    if(imgData[i+3] < 128) continue;
+                    const gray = imgData[i]*0.3 + imgData[i+1]*0.59 + imgData[i+2]*0.11;
                     if(gray < thr) {
                         mCtx.beginPath(); mCtx.arc(x+dot/2, y+dot/2, (1 - gray/255)*(dot/2.1), 0, Math.PI*2); mCtx.fill();
                     }
@@ -270,17 +235,53 @@
             if (currentStickerType) mCtx.drawImage(stickerAssets[currentStickerType], 0, 0, mCanvas.width, mCanvas.height);
         }
 
+        function initInteractions() {
+            const start = (e) => {
+                isDragging = true;
+                const p = e.touches ? e.touches[0] : e;
+                lastX = p.clientX; lastY = p.clientY;
+                if(e.touches && e.touches.length === 2) {
+                    lastDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                }
+            };
+            const move = (e) => {
+                if(!isDragging) return;
+                if(e.touches && e.touches.length === 2) {
+                    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                    scale *= dist / lastDist;
+                    lastDist = dist;
+                } else {
+                    const p = e.touches ? e.touches[0] : e;
+                    posX += p.clientX - lastX; posY += p.clientY - lastY;
+                    lastX = p.clientX; lastY = p.clientY;
+                }
+                draw();
+                e.preventDefault();
+            };
+            const stop = () => { isDragging = false; lastDist = 0; };
+            mCanvas.addEventListener('mousedown', start);
+            mCanvas.addEventListener('touchstart', start, {passive:false});
+            window.addEventListener('mousemove', move);
+            window.addEventListener('touchmove', move, {passive:false});
+            window.addEventListener('mouseup', stop);
+            window.addEventListener('touchend', stop);
+            mCanvas.addEventListener('wheel', (e) => {
+                scale += e.deltaY * -0.001;
+                scale = Math.max(0.1, Math.min(scale, 5));
+                draw();
+                e.preventDefault();
+            }, {passive:false});
+        }
+
         function toggleStickerMenu() {
             if(!isProcessed) return;
             const menu = document.getElementById('sticker-menu');
             menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
         }
-
         function applyRealSticker(type) {
             currentStickerType = (currentStickerType === type) ? null : type;
-            drawArt(); document.getElementById('sticker-menu').style.display = 'none';
+            draw(); document.getElementById('sticker-menu').style.display = 'none';
         }
-
         function randomize() {
             document.getElementById('dotIn').value = Math.floor(Math.random()*9)+1;
             document.getElementById('threshIn').value = Math.floor(Math.random()*9)+1;
@@ -288,20 +289,18 @@
             selectedInk = colors[Math.floor(Math.random()*colors.length)];
             document.getElementById('inkPrev').style.background = selectedInk;
             document.getElementById('inkColor').value = selectedInk;
-            drawArt();
+            draw();
         }
-
         function exportArt() {
             const link = document.createElement('a');
-            link.download = 'VibePrinting_Art.png';
+            link.download = 'VibePrint.png';
             link.href = mCanvas.toDataURL(); link.click();
         }
-
-        document.querySelectorAll('input').forEach(i => i.oninput = drawArt);
+        document.querySelectorAll('input').forEach(i => i.oninput = draw);
         document.getElementById('inkColor').onchange = (e) => {
             selectedInk = e.target.value;
             document.getElementById('inkPrev').style.background = selectedInk;
-            drawArt();
+            draw();
         };
     </script>
 </body>
